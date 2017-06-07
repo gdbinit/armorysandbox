@@ -4,7 +4,7 @@ LINUX_VER=4.9.28
 UBOOT_VER=2017.05
 
 USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
-TARGET_IMG=usbarmory-debian_jessie-base_image-`date +%Y%m%d`.raw
+TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
 
 ${TARGET_IMG}:
 	fallocate -l 3500MiB  ${TARGET_IMG}
@@ -41,23 +41,23 @@ debian: ${TARGET_IMG}
 	sudo rm rootfs/usr/bin/qemu-arm-static
 
 linux-${LINUX_VER}.tar.xz:
-	wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-${LINUX_VER}.tar.xz -O linux-${LINUX_VER}.tar.xz
-	wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-${LINUX_VER}.tar.sign -O linux-${LINUX_VER}.tar.sign
+	cp source_packages/linux-${LINUX_VER}.tar.xz .
+	cp source_packages/linux-${LINUX_VER}.tar.sign .
 
 u-boot-${UBOOT_VER}.tar.xz:
-	wget ftp://ftp.denx.de/pub/u-boot/u-boot-${UBOOT_VER}.tar.bz2 -O u-boot-${UBOOT_VER}.tar.bz2
-	wget ftp://ftp.denx.de/pub/u-boot/u-boot-${UBOOT_VER}.tar.bz2.sig -O u-boot-${UBOOT_VER}.tar.bz2.sig
+	cp source_packages/u-boot-${UBOOT_VER}.tar.bz2 .
+	cp source_packages/u-boot-${UBOOT_VER}.tar.bz2.sig .
 
 linux-${LINUX_VER}/arch/arm/boot/zImage: linux-${LINUX_VER}.tar.xz
 	unxz linux-${LINUX_VER}.tar.xz
 	gpg --verify linux-${LINUX_VER}.tar.sign
 	tar xvf linux-${LINUX_VER}.tar && cd linux-${LINUX_VER}
-	wget ${USBARMORY_REPO}/software/kernel_conf/usbarmory_linux-4.9.config -O linux-${LINUX_VER}/.config
-	wget ${USBARMORY_REPO}/software/kernel_conf/imx53-usbarmory-host.dts -O linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-host.dts
-	wget ${USBARMORY_REPO}/software/kernel_conf/imx53-usbarmory-gpio.dts -O linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-gpio.dts
-	wget ${USBARMORY_REPO}/software/kernel_conf/imx53-usbarmory-spi.dts -O linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-spi.dts
-	wget ${USBARMORY_REPO}/software/kernel_conf/imx53-usbarmory-i2c.dts -O linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-i2c.dts
-	wget ${USBARMORY_REPO}/software/kernel_conf/imx53-usbarmory-scc2.dts -O linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-scc2.dts
+	sudo cp kernel_conf/usbarmory_linux-4.9.config linux-${LINUX_VER}/.config
+	sudo cp kernel_conf/kernel_conf/imx53-usbarmory-host.dts linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-host.dts
+	sudo cp kernel_conf/kernel_conf/imx53-usbarmory-gpio.dts linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-gpio.dts
+	sudo cp kernel_conf/kernel_conf/imx53-usbarmory-spi.dts linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-spi.dts
+	sudo cp kernel_conf/kernel_conf/imx53-usbarmory-i2c.dts linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-i2c.dts
+	sudo cp kernel_conf/kernel_conf/imx53-usbarmory-scc2.dts linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory-scc2.dts
 	cd linux-${LINUX_VER} && KBUILD_BUILD_USER=usbarmory KBUILD_BUILD_HOST=usbarmory ARCH=arm CROSS_COMPILE=arm-none-eabi- make -j2 zImage modules imx53-usbarmory.dtb imx53-usbarmory-host.dtb imx53-usbarmory-gpio.dtb imx53-usbarmory-spi.dtb imx53-usbarmory-i2c.dtb imx53-usbarmory-scc2.dtb
 
 u-boot-${UBOOT_VER}/u-boot.imx: u-boot-${UBOOT_VER}.tar.xz
@@ -87,5 +87,5 @@ all: debian linux u-boot finalize
 clean:
 	-rm -r linux-${LINUX_VER}*
 	-rm -r u-boot-${UBOOT_VER}*
-	-rm usbarmory-debian_jessie-base_image-*.raw
+	-rm armorysandbox-debian_jessie-base_image-*.raw
 	-rmdir rootfs
