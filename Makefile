@@ -75,13 +75,16 @@ u-boot: u-boot-${UBOOT_VER}/u-boot.imx
 finalize: image-${TARGET_IMG} u-boot-${UBOOT_VER}/u-boot.imx linux-${LINUX_VER}/arch/arm/boot/zImage
 	sudo cp linux-${LINUX_VER}/arch/arm/boot/zImage rootfs/boot/
 	sudo cp linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory*.dtb rootfs/boot/
+	# set it to host mode
+	sudo cp rootfs/boot/imx53-usbarmory.dtb rootfs/boot/imx53-usbarmory.dtb-default
+	sudo cp rootfs/boot/imx53-usbarmory-host.dtb rootfs/boot/imx53-usbarmory.dtb
 	cd linux-${LINUX_VER} && sudo make INSTALL_MOD_PATH=../rootfs ARCH=arm modules_install
 	sudo rm rootfs/lib/modules/${LINUX_VER}/build
 	sudo rm rootfs/lib/modules/${LINUX_VER}/source
 	sudo umount rootfs
 	sudo dd if=u-boot-${UBOOT_VER}/u-boot.imx of=${TARGET_IMG} bs=512 seek=2 conv=fsync conv=notrunc
-	xz -k ${TARGET_IMG}
-	zip -j ${TARGET_IMG}.zip ${TARGET_IMG}
+	#xz -k ${TARGET_IMG}
+	#zip -j ${TARGET_IMG}.zip ${TARGET_IMG}
 
 all: debian linux u-boot finalize
 
