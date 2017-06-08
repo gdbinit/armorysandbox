@@ -6,13 +6,13 @@ UBOOT_VER=2017.05
 USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
 TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
 
-image-${TARGET_IMG}:
+debian:
 	fallocate -l 3500MiB  ${TARGET_IMG}
 	/sbin/parted ${TARGET_IMG} --script mklabel msdos
 	/sbin/parted ${TARGET_IMG} --script mkpart primary ext4 5M 100%
-
-debian: image-${TARGET_IMG}
-	/sbin/mkfs.ext4 -F -E offset=5242880 ${TARGET_IMG}
+	/sbin/losetup /dev/loop0 ${TARGET_IMG} -o 5242880 --sizelimit 3500MiB
+	/sbin/mkfs.ext4 -F /dev/loop0
+	/sbin/losetup -d /dev/loop0
 	mkdir -p rootfs
 	sudo mount -o loop,offset=5242880 -t ext4 ${TARGET_IMG} rootfs/
 	sudo qemu-debootstrap --arch=armhf --include=ssh,sudo,ntpdate,fake-hwclock,openssl,vim,nano,cryptsetup,lvm2,locales,less,cpufrequtils,isc-dhcp-server,haveged,whois,iw,wpasupplicant,dbus jessie rootfs http://ftp.debian.org/debian/
@@ -72,7 +72,7 @@ linux: linux-${LINUX_VER}/arch/arm/boot/zImage
 
 u-boot: u-boot-${UBOOT_VER}/u-boot.imx
 
-finalize: image-${TARGET_IMG} u-boot-${UBOOT_VER}/u-boot.imx linux-${LINUX_VER}/arch/arm/boot/zImage
+finalize: u-boot-${UBOOT_VER}/u-boot.imx linux-${LINUX_VER}/arch/arm/boot/zImage
 	sudo cp linux-${LINUX_VER}/arch/arm/boot/zImage rootfs/boot/
 	sudo cp linux-${LINUX_VER}/arch/arm/boot/dts/imx53-usbarmory*.dtb rootfs/boot/
 	# set it to host mode
