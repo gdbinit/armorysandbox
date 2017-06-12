@@ -5,6 +5,7 @@ UBOOT_VER=2017.05
 
 USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
 TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
+DEBIAN_MIRROR=http://ftp.pt.debian.org/debian/
 
 debian:
 	fallocate -l 3500MiB  ${TARGET_IMG}
@@ -15,7 +16,14 @@ debian:
 	/sbin/losetup -d /dev/loop0
 	mkdir -p rootfs
 	sudo mount -o loop,offset=5242880 -t ext4 ${TARGET_IMG} rootfs/
-	sudo qemu-debootstrap --arch=armhf --include=ssh,sudo,ntpdate,fake-hwclock,openssl,vim,nano,cryptsetup,lvm2,locales,less,cpufrequtils,isc-dhcp-server,haveged,whois,iw,wpasupplicant,dbus jessie rootfs http://ftp.debian.org/debian/
+	
+	sudo qemu-debootstrap --arch=armhf --include=ssh,sudo,ntpdate,fake-hwclock,openssl,\
+	vim,nano,cryptsetup,lvm2,locales,less,cpufrequtils,isc-dhcp-server,haveged,whois,iw,\
+	wpasupplicant,dbus,hfsplus,hfsprogs,hfsutils,dmg2img,gdb,gdb-arm-none-eabi,gdb-multiarch,\
+	gdbserver,xz-utils,zip,curl,bzip2,gcc,gcc-arm-none-eabi,git,make,file,\
+	dc3dd,extundelete,magicrescue,scalpel,shed,sleuthkit,ssdeep,yara \
+	jessie rootfs ${DEBIAN_MIRROR}
+
 	sudo cp conf/rc.local rootfs/etc/rc.local
 	sudo cp conf/sources.list rootfs/etc/apt/sources.list
 	sudo cp conf/dhcpd.conf rootfs/etc/dhcp/dhcpd.conf
