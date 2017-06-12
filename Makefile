@@ -6,12 +6,14 @@ UBOOT_VER=2017.05
 USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
 TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
 DEBIAN_MIRROR=http://ftp.pt.debian.org/debian/
+IMAGE_SIZE=3500MiB
 
 debian:
-	fallocate -l 3500MiB  ${TARGET_IMG}
+	fallocate -l ${IMAGE_SIZE}  ${TARGET_IMG}
 	/sbin/parted ${TARGET_IMG} --script mklabel msdos
 	/sbin/parted ${TARGET_IMG} --script mkpart primary ext4 5M 100%
-	/sbin/losetup /dev/loop0 ${TARGET_IMG} -o 5242880 --sizelimit 3500MiB
+	# we need to do this else mkfs will overwrite the MBR because it doesn't care about offset option
+	/sbin/losetup /dev/loop0 ${TARGET_IMG} -o 5242880 --sizelimit ${IMAGE_SIZE}
 	/sbin/mkfs.ext4 -F /dev/loop0
 	/sbin/losetup -d /dev/loop0
 	mkdir -p rootfs
