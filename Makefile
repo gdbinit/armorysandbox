@@ -7,6 +7,7 @@ USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
 TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
 DEBIAN_MIRROR=http://ftp.pt.debian.org/debian/
 IMAGE_SIZE=3500MiB
+SSH_KEY="CHANGE_ME!"
 
 debian:
 	fallocate -l ${IMAGE_SIZE}  ${TARGET_IMG}
@@ -28,23 +29,33 @@ debian:
 
 	sudo cp conf/rc.local rootfs/etc/rc.local
 	sudo cp conf/sources.list rootfs/etc/apt/sources.list
-	sudo cp conf/dhcpd.conf rootfs/etc/dhcp/dhcpd.conf
-	sudo sed -i -e 's/INTERFACES=""/INTERFACES="usb0"/' rootfs/etc/default/isc-dhcp-server
+	# these are non-host mode related options, no need here
+	#sudo cp conf/dhcpd.conf rootfs/etc/dhcp/dhcpd.conf
+	#sudo sed -i -e 's/INTERFACES=""/INTERFACES="usb0"/' rootfs/etc/default/isc-dhcp-server
 	echo "tmpfs /tmp tmpfs defaults 0 0" | sudo tee rootfs/etc/fstab
 	echo -e "\nUseDNS no" | sudo tee -a rootfs/etc/ssh/sshd_config
-	echo "nameserver 8.8.8.8" | sudo tee rootfs/etc/resolv.conf
+	# don't leak to Google DNS if we ever set a gateway, at least by default
+	#echo "nameserver 8.8.8.8" | sudo tee rootfs/etc/resolv.conf
 	sudo chroot rootfs systemctl mask getty-static.service
 	sudo chroot rootfs systemctl mask display-manager.service
 	sudo chroot rootfs systemctl mask hwclock-save.service
 	echo "ledtrig_heartbeat" | sudo tee -a rootfs/etc/modules
 	echo "ci_hdrc_imx" | sudo tee -a rootfs/etc/modules
-	echo "g_ether" | sudo tee -a rootfs/etc/modules
-	echo "options g_ether use_eem=0 dev_addr=1a:55:89:a2:69:41 host_addr=1a:55:89:a2:69:42" | sudo tee -a rootfs/etc/modprobe.d/usbarmory.conf
-	echo -e 'auto usb0\nallow-hotplug usb0\niface usb0 inet static\n  address 10.0.0.1\n  netmask 255.255.255.0\n  gateway 10.0.0.2'| sudo tee -a rootfs/etc/network/interfaces
-	echo "usbarmory" | sudo tee rootfs/etc/hostname
+	# these are non-host mode related options, no need here
+	#echo "g_ether" | sudo tee -a rootfs/etc/modules
+	#echo "options g_ether use_eem=0 dev_addr=1a:55:89:a2:69:41 host_addr=1a:55:89:a2:69:42" | sudo tee -a rootfs/etc/modprobe.d/usbarmory.conf
+	#echo -e 'auto usb0\nallow-hotplug usb0\niface usb0 inet static\n  address 10.0.0.1\n  netmask 255.255.255.0\n  gateway 10.0.0.2\n'| sudo tee -a rootfs/etc/network/interfaces
+	echo -e 'auto eth0\nallow-hotplug eth0\niface eth0 inet static\n  address 10.1.0.1\n  netmask 255.255.255.0\n'| sudo tee -a rootfs/etc/network/interfaces
+	echo "armorysandbox" | sudo tee rootfs/etc/hostname
 	echo "usbarmory  ALL=(ALL) NOPASSWD: ALL" | sudo tee -a rootfs/etc/sudoers
-	echo -e "127.0.1.1\tusbarmory" | sudo tee -a rootfs/etc/hosts
+	echo -e "127.0.1.1\tarmorysandbox" | sudo tee -a rootfs/etc/hosts
 	sudo chroot rootfs /usr/sbin/useradd -s /bin/bash -p `sudo chroot rootfs mkpasswd -m sha-512 usbarmory` -m usbarmory
+	sudo mkdir rootfs/home/usbarmory/.ssh
+	sudo chown 1000:1000 rootfs/home/usbarmory/.ssh
+	sudo chmod 700 rootfs/home/usbarmory/.ssh
+	echo ${SSH_KEY} | tee -a rootfs/home/usbarmory/.ssh/authorized_keys
+	sudo chown 1000:1000 rootfs/home/usbarmory/.ssh/authorized_keys
+	sudo chmod 400 rootfs/home/usbarmory/.ssh/authorized_keys
 	sudo rm rootfs/etc/ssh/ssh_host_*
 	sudo chroot rootfs apt-get clean
 	sudo chroot rootfs fake-hwclock
