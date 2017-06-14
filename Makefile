@@ -5,21 +5,22 @@ UBOOT_VER=2017.05
 
 USBARMORY_REPO=https://raw.githubusercontent.com/inversepath/usbarmory/master
 TARGET_IMG=armorysandbox-debian_jessie-base_image-`date +%Y%m%d`.raw
-DEBIAN_MIRROR=http://ftp.pt.debian.org/debian/
+DEBIAN_MIRROR=http://ftp.debian.org/debian/
 IMAGE_SIZE=3500MiB
 SSH_KEY="CHANGE_ME!"
 
 debian:
-	fallocate -l ${IMAGE_SIZE}  ${TARGET_IMG}
+	fallocate -l ${IMAGE_SIZE} ${TARGET_IMG}
 	/sbin/parted ${TARGET_IMG} --script mklabel msdos
 	/sbin/parted ${TARGET_IMG} --script mkpart primary ext4 5M 100%
 	# we need to do this else mkfs will overwrite the MBR because it doesn't care about offset option
-	/sbin/losetup /dev/loop0 ${TARGET_IMG} -o 5242880 --sizelimit ${IMAGE_SIZE}
-	/sbin/mkfs.ext4 -F /dev/loop0
-	/sbin/losetup -d /dev/loop0
+	sudo /sbin/losetup /dev/loop0 ${TARGET_IMG} -o 5242880 --sizelimit ${IMAGE_SIZE}
+	sudo /sbin/mkfs.ext4 -F /dev/loop0
+	sudo /sbin/losetup -d /dev/loop0
 	mkdir -p rootfs
 	sudo mount -o loop,offset=5242880 -t ext4 ${TARGET_IMG} rootfs/
 	
+	# If you need, add more packages over here
 	sudo qemu-debootstrap --arch=armhf --include=ssh,sudo,ntpdate,fake-hwclock,openssl,\
 	vim,nano,cryptsetup,lvm2,locales,less,cpufrequtils,isc-dhcp-server,haveged,whois,iw,\
 	wpasupplicant,dbus,hfsplus,hfsprogs,hfsutils,dmg2img,gdb,gdb-arm-none-eabi,gdb-multiarch,\
@@ -49,6 +50,7 @@ debian:
 	echo "armorysandbox" | sudo tee rootfs/etc/hostname
 	echo "usbarmory  ALL=(ALL) NOPASSWD: ALL" | sudo tee -a rootfs/etc/sudoers
 	echo -e "127.0.1.1\tarmorysandbox" | sudo tee -a rootfs/etc/hosts
+	# CHANGEME!!!!
 	sudo chroot rootfs /usr/sbin/useradd -s /bin/bash -p `sudo chroot rootfs mkpasswd -m sha-512 usbarmory` -m usbarmory
 	sudo mkdir rootfs/home/usbarmory/.ssh
 	sudo chown 1000:1000 rootfs/home/usbarmory/.ssh
